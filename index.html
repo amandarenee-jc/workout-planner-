@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Full-Body Workout Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: control strip on top, then a training card grid split into warm-up / main block / cool-down */
+:root{
+  --bg:#F3F4F8; --surface:#FFFFFF; --surface-2:#ECEEF5; --ink:#1A1C2A; --muted:#5E6378; --line:#D6D9E4;
+  --accent:#C93A68; --accent-soft:#F7DCE6; --fig:#1A1C2A; --fig-far:#9DA2B6; --ok:#2E7D5B; --ok-soft:#DCEFE5;
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#13141B; --surface:#1D1F29; --surface-2:#252836; --ink:#ECEDF4; --muted:#A3A8BC; --line:#34384A;
+  --accent:#FF6F98; --accent-soft:#4A2232; --fig:#ECEDF4; --fig-far:#6B7086; --ok:#6FD3A4; --ok-soft:#1C3A2D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#13141B; --surface:#1D1F29; --surface-2:#252836; --ink:#ECEDF4; --muted:#A3A8BC; --line:#34384A;
+  --accent:#FF6F98; --accent-soft:#4A2232; --fig:#ECEDF4; --fig-far:#6B7086; --ok:#6FD3A4; --ok-soft:#1C3A2D; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding-inline:16px;padding-block:28px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+header h1{font:800 clamp(30px,5vw,46px)/1.02 var(--display);letter-spacing:-.02em;margin:0;text-wrap:balance}
+header h1 em{font-style:normal;color:var(--accent)}
+header p{margin:8px 0 0;color:var(--muted);max-width:60ch}
+.controls{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px 22px}
+.group{min-width:0}
+.group .lbl{font:600 11px/1 var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:500 14px var(--body);color:var(--ink);background:var(--surface-2);border:1px solid transparent;border-radius:999px;padding:7px 13px;cursor:pointer}
+.seg button:hover{border-color:var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.gear-group{grid-column:span 2}
+@media (max-width:560px){.gear-group{grid-column:auto}}
+#gear .all{border:1px dashed var(--accent);color:var(--accent);background:transparent}
+#gear .all[aria-pressed="true"]{background:var(--accent);color:#fff;border-style:solid}
+.musc{display:grid;grid-template-columns:1fr;gap:4px;margin:0}
+.musc dd + dt{margin-top:4px}
+.musc dt{font:600 10.5px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.musc dd{margin:0;display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+.musc dd span{font:500 12px/1.3 var(--body);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--muted)}
+.musc dd.pri span{background:var(--accent-soft);border-color:transparent;color:var(--ink);font-weight:600}
+.coverage{flex-basis:100%;display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-size:13px;color:var(--muted)}
+.coverage b{font:600 11px var(--body);letter-spacing:.08em;text-transform:uppercase;margin-right:4px}
+.coverage span{background:var(--accent-soft);color:var(--ink);border-radius:6px;padding:2px 8px;font-size:12.5px;font-weight:600}
+.coverage span i{font-style:normal;font:500 11px var(--mono);color:var(--accent);margin-left:5px}
+.muscles .kit{border-color:var(--accent);color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center;border-top:1px solid var(--line);padding-top:14px}
+.btn{font:600 14px var(--body);border-radius:10px;padding:10px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.summary{margin-left:auto;font:500 13px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.block{display:flex;flex-direction:column;gap:14px}
+.block-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.block-head h2{font:800 24px/1.1 var(--display);margin:0;letter-spacing:-.01em}
+.block-head .meta{font:500 13px var(--mono);color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-width:0;transition:opacity .2s}
+.card.done{opacity:.55}
+.art{position:relative;background:var(--surface-2);aspect-ratio:4/3;max-width:100%}
+.art svg{width:100%;height:100%;display:block}
+.num{position:absolute;top:10px;left:10px;font:700 12px var(--mono);background:var(--surface);color:var(--ink);border-radius:6px;padding:3px 7px}
+.tag{position:absolute;top:10px;right:10px;font:600 11px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:3px 7px}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
+.body h3{font:700 18px/1.2 var(--display);margin:0}
+.rx{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.rx strong{font:700 22px/1 var(--mono);color:var(--accent);font-variant-numeric:tabular-nums}
+.rx span{font:500 12.5px var(--mono);color:var(--muted)}
+.muscles{display:flex;flex-wrap:wrap;gap:5px}
+.muscles span{font:500 12px var(--body);border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--muted)}
+.cue{margin:0;color:var(--ink);font-size:14px}
+.cue b{font-weight:600}
+.card-actions{display:flex;gap:8px;margin-top:auto;padding-top:4px}
+.card-actions button{flex:1;font:600 13px var(--body);border-radius:8px;padding:8px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.card.done .done-btn{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
+.note{font-size:13px;color:var(--muted);max-width:75ch;border-top:1px solid var(--line);padding-top:16px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:10px;font:600 14px var(--body)}
+@media (max-width:520px){.summary{margin-left:0;width:100%}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Build your <em>full-body</em> workout</h1>
+    <p>Pick your level, goal, time and equipment. You get a warm-up, a main block with sets, reps and rest, and a cool-down. Each move has an animated demo.</p>
+  </header>
+
+  <section class="controls" aria-label="Workout settings">
+    <div class="group"><span class="lbl">Level</span><div class="seg" data-key="level">
+      <button data-v="1">Beginner</button><button data-v="2">Intermediate</button><button data-v="3">Advanced</button></div></div>
+    <div class="group"><span class="lbl">Goal</span><div class="seg" data-key="goal">
+      <button data-v="strength">Strength</button><button data-v="tone">Tone &amp; sculpt</button><button data-v="burn">Fat burn</button></div></div>
+    <div class="group"><span class="lbl">Time</span><div class="seg" data-key="time">
+      <button data-v="20">20 min</button><button data-v="30">30 min</button><button data-v="45">45 min</button></div></div>
+    <div class="group gear-group"><span class="lbl">Equipment · bodyweight always included · pick any</span><div class="seg" id="gear">
+      <button data-g="db">Dumbbells</button><button data-g="kb">Kettlebell</button><button data-g="bb">Barbell &amp; bench</button><button data-g="cable">Cable machine</button><button data-g="machine">Machines (leg press, pulldown, rower)</button><button data-g="all" class="all">Full gym</button></div></div>
+    <div class="group"><span class="lbl">Emphasis · pick any</span><div class="seg" id="focus">
+      <button data-f="balanced">Balanced</button><button data-f="lower">Glutes &amp; legs</button><button data-f="upper">Arms &amp; back</button><button data-f="core">Core</button><button data-f="cardio">Cardio</button></div></div>
+    <div class="actions">
+      <button class="btn primary" id="gen">Generate new workout</button>
+      <button class="btn" id="copy">Copy plan</button>
+      <span class="summary" id="summary"></span>
+    </div>
+  </section>
+
+  <section class="block" id="warm"></section>
+  <section class="block" id="main"></section>
+  <section class="block" id="cool"></section>
+
+  <p class="note">Weights: pick a dumbbell, kettlebell, bar or machine load where the last 2 reps of each set feel hard but your form stays clean. Increase the weight when the top of the rep range feels easy. If you're pregnant, postpartum, or working around an injury, check with your provider before starting.</p>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// ---------- Pose system ----------
+// Index: 0 head,1 neck,2 hip,3 farElbow,4 farHand,5 nearElbow,6 nearHand,7 farKnee,8 farFoot,9 nearKnee,10 nearFoot
+const mod=(b,c)=>b.map((p,i)=>c[i]?c[i]:p);
+const STAND=[[60,21],[60,30],[60,61],[58,45],[58,59],[62,45],[62,59],[59,84],[59,108],[61,84],[61,108]];
+const FSTAND=[[60,20],[60,30],[60,61],[48,46],[47,60],[72,46],[73,60],[53,85],[53,108],[67,85],[67,108]];
+const SQUAT=[[77,52],[72,59],[54,84],[85,59],[99,58],[86,58],[100,57],[74,88],[62,108],[76,88],[62,108]];
+const LUNGE=[[53,42],[53,51],[52,82],[52,65],[51,79],[54,65],[53,79],[44,104],[21,108],[74,85],[72,108]];
+const RDL=[[91,52],[82,54],[52,62],[82,68],[83,82],[84,68],[85,82],[61,86],[60,108],[63,86],[61,108]];
+const SLRDL=[[91,52],[82,54],[52,62],[82,68],[83,82],[84,68],[85,82],[30,58],[8,55],[63,86],[61,108]];
+const ROW_A=[[83,37],[76,42],[52,62],[77,56],[78,70],[78,56],[79,70],[63,86],[60,108],[65,86],[61,108]];
+const ROW_B=mod(ROW_A,{3:[63,49],4:[66,61],5:[64,49],6:[67,61]});
+const BR_A=[[20,101],[29,103],[58,104],[42,106],[55,107],[43,106],[56,107],[75,84],[86,107],[77,83],[87,107]];
+const BR_B=[[20,101],[29,103],[58,92],[42,106],[55,107],[43,106],[56,107],[75,81],[86,107],[77,80],[87,107]];
+const QUAD=[[30,76],[38,80],[69,82],[38,94],[38,108],[39,94],[39,108],[69,105],[92,108],[70,105],[93,108]];
+const PU_A=[[32,79],[40,82],[69,94],[40,95],[40,108],[41,95],[41,108],[91,101],[112,108],[91,101],[112,108]];
+const PU_B=[[35,97],[44,98],[75,102],[54,104],[40,108],[55,104],[41,108],[98,105],[112,108],[98,105],[112,108]];
+const KP_A=[[32,78],[40,82],[68,96],[40,95],[40,108],[41,95],[41,108],[92,108],[108,94],[92,108],[108,94]];
+const KP_B=[[35,97],[44,98],[74,104],[54,104],[40,108],[55,104],[41,108],[92,108],[108,94],[92,108],[108,94]];
+const PL_A=[[31,92],[40,94],[70,100],[40,108],[54,108],[41,108],[55,108],[93,104],[112,108],[93,104],[112,108]];
+const DB_A=[[24,100],[33,102],[64,104],[34,88],[35,74],[35,88],[36,74],[66,81],[88,82],[67,81],[89,82]];
+const BI_A=[[26,88],[33,94],[62,104],[38,82],[24,90],[39,82],[25,90],[84,98],[106,96],[60,82],[80,86]];
+const TW_A=[[38,70],[42,78],[56,104],[54,90],[68,96],[55,90],[69,96],[74,84],[94,92],[75,84],[95,92]];
+const SUP_A=[[22,101],[31,104],[62,106],[20,105],[8,105],[20,104],[8,104],[85,106],[108,106],[85,106],[108,106]];
+const SUP_B=[[22,93],[31,99],[62,106],[20,97],[8,95],[20,96],[8,94],[85,104],[107,99],[85,104],[107,99]];
+const MARCH_A=mod(STAND,{9:[76,68],10:[74,92],5:[66,44],6:[74,37],3:[55,44],4:[54,58]});
+const MARCH_B=mod(STAND,{7:[76,68],8:[74,92],3:[66,44],4:[74,37],5:[55,44],6:[54,58]});
+const CP_A=[[37,100],[46,96],[74,98],[32,104],[18,107],[33,104],[19,107],[52,106],[76,108],[53,106],[77,108]];
+const HS_A=[[48,65],[46,74],[40,104],[56,84],[68,92],[57,84],[69,92],[63,104],[86,106],[63,104],[86,106]];
+const HS_B=[[73,80],[64,86],[40,104],[76,92],[86,100],[77,92],[87,100],[63,104],[86,106],[63,104],[86,106]];
+const F4_A=[[22,100],[31,102],[60,104],[44,92],[58,88],[45,92],[59,88],[70,82],[88,88],[76,86],[66,78]];
+const F4_B=[[22,100],[31,102],[60,104],[42,92],[54,86],[43,92],[55,86],[66,80],[84,84],[72,85],[62,76]];
+const QS_A=mod(STAND,{9:[57,85],10:[49,63],5:[56,45],6:[50,60],3:[70,40],4:[82,44]});
+
+// ---------- Exercise library ----------
+// equip: bw = bodyweight only, db = needs dumbbells, either = works both ways. w: draw dumbbells (one/two).
+const EX=[
+ // warm-up
+ {id:"march",n:"March in Place",cat:"warm",lv:1,eq:"bw",kind:"time",A:MARCH_A,B:MARCH_B,sp:1.6,m:["Hips","Heart rate"],cue:"Drive each knee to hip height and swing the opposite arm."},
+ {id:"circles",n:"Arm Circles",cat:"warm",lv:1,eq:"bw",kind:"time",view:"front",A:mod(FSTAND,{3:[38,33],4:[25,34],5:[82,33],6:[95,34]}),B:mod(FSTAND,{3:[39,27],4:[27,22],5:[81,27],6:[93,22]}),sp:0.9,m:["Shoulders"],cue:"Small circles forward for half the time, then reverse."},
+ {id:"hinge",n:"Hip Hinge",cat:"warm",lv:1,eq:"bw",kind:"time",A:STAND,B:RDL,sp:2.6,m:["Hamstrings","Low back"],cue:"Push your hips back with a long, flat spine. Stand tall by squeezing your glutes."},
+ {id:"airsquat",n:"Slow Air Squat",cat:"warm",lv:1,eq:"bw",kind:"time",A:STAND,B:SQUAT,sp:3,m:["Quads","Hips"],cue:"Take 3 seconds down and 1 second up to open the hips."},
+ // lower
+ {id:"squat",n:"Bodyweight Squat",cat:"lower",lv:1,eq:"bw",kind:"reps",A:STAND,B:SQUAT,sp:2.4,m:["Quads","Glutes"],cue:"Sit back like there's a chair behind you. Keep knees tracking over your toes."},
+ {id:"goblet",n:"Goblet Squat",cat:"lower",lv:1,eq:"db",w:"one",kind:"reps",A:mod(STAND,{3:[63,44],4:[67,34],5:[64,44],6:[68,34]}),B:mod(SQUAT,{3:[75,73],4:[81,61],5:[76,73],6:[82,61]}),sp:2.6,m:["Quads","Glutes","Core"],cue:"Hold one dumbbell at your chest. Elbows point down and brush the inside of your knees."},
+ {id:"lunge",n:"Reverse Lunge",cat:"lower",lv:1,eq:"either",w:"two",uni:1,kind:"reps",A:STAND,B:LUNGE,sp:2.4,m:["Glutes","Quads"],cue:"Step back and drop the back knee toward the floor. Push through the front heel to stand."},
+ {id:"bridge",n:"Glute Bridge",cat:"lower",lv:1,eq:"bw",kind:"reps",A:BR_A,B:BR_B,sp:2.2,floor:1,m:["Glutes","Hamstrings"],cue:"Press through your heels and squeeze your glutes at the top. Pause for 1 second."},
+ {id:"rdl",n:"Romanian Deadlift",cat:"lower",lv:1,eq:"db",w:"two",kind:"reps",A:STAND,B:RDL,sp:2.8,m:["Hamstrings","Glutes"],cue:"Slide the weights down your thighs with soft knees. Stop when your back starts to round."},
+ {id:"slrdl",n:"Single-Leg Deadlift",cat:"lower",lv:2,eq:"either",w:"two",uni:1,kind:"reps",A:STAND,B:SLRDL,sp:3,m:["Glutes","Hamstrings","Balance"],cue:"Hinge on one leg while the other reaches straight back. Keep your hips square to the floor."},
+ {id:"sumo",n:"Sumo Squat",cat:"lower",lv:1,eq:"either",w:"one",kind:"reps",view:"front",A:mod(FSTAND,{7:[48,84],8:[44,108],9:[72,84],10:[76,108],3:[52,46],4:[58,58],5:[68,46],6:[62,58]}),B:[[60,37],[60,47],[60,78],[52,63],[58,74],[68,63],[62,74],[42,88],[44,108],[78,88],[76,108]],sp:2.4,m:["Inner thighs","Glutes"],cue:"Wide stance, toes turned out. Push your knees out as you lower."},
+ {id:"donkey",n:"Donkey Kick",cat:"lower",lv:1,eq:"bw",uni:1,kind:"reps",A:QUAD,B:mod(QUAD,{9:[91,80],10:[92,58]}),sp:1.8,floor:1,m:["Glutes"],cue:"Keep the knee bent at 90° and press your heel toward the ceiling without arching your back."},
+ // upper
+ {id:"kneepush",n:"Knee Push-Up",cat:"upper",lv:1,eq:"bw",kind:"reps",A:KP_A,B:KP_B,sp:2.2,floor:1,m:["Chest","Triceps","Shoulders"],cue:"Straight line from head to knees. Elbows angle back about 45°."},
+ {id:"pushup",n:"Push-Up",cat:"upper",lv:2,eq:"bw",kind:"reps",A:PU_A,B:PU_B,sp:2.2,floor:1,m:["Chest","Triceps","Core"],cue:"Brace like a plank and lower your chest to fist height above the floor."},
+ {id:"taps",n:"Plank Shoulder Taps",cat:"upper",lv:1,eq:"bw",uni:1,kind:"reps",A:PU_A,B:mod(PU_A,{5:[50,94],6:[42,84]}),sp:1.4,floor:1,m:["Shoulders","Core"],cue:"Widen your feet for balance. Tap the opposite shoulder without rocking your hips."},
+ {id:"superman",n:"Superman",cat:"upper",lv:1,eq:"bw",kind:"reps",A:SUP_A,B:SUP_B,sp:2.4,floor:1,m:["Upper back","Low back"],cue:"Lift your arms, chest and legs together. Keep your gaze on the floor."},
+ {id:"row",n:"Bent-Over Row",cat:"upper",lv:1,eq:"db",w:"two",kind:"reps",A:ROW_A,B:ROW_B,sp:2.2,m:["Back","Biceps"],cue:"Hinge to 45°. Pull your elbows back toward your hips and squeeze your shoulder blades."},
+ {id:"press",n:"Overhead Press",cat:"upper",lv:1,eq:"db",w:"two",kind:"reps",view:"front",A:mod(FSTAND,{3:[40,40],4:[40,26],5:[80,40],6:[80,26]}),B:mod(FSTAND,{3:[46,18],4:[46,4],5:[74,18],6:[74,4]}),sp:2.2,m:["Shoulders","Triceps"],cue:"Ribs down, glutes tight. Press straight up until your biceps are by your ears."},
+ {id:"curl",n:"Bicep Curl",cat:"upper",lv:1,eq:"db",w:"two",kind:"reps",A:STAND,B:mod(STAND,{3:[59,45],4:[67,36],5:[61,45],6:[69,36]}),sp:2,m:["Biceps"],cue:"Pin your elbows to your sides. Lower slowly for a 3-count."},
+ {id:"lateral",n:"Lateral Raise",cat:"upper",lv:2,eq:"db",w:"two",kind:"reps",view:"front",A:mod(FSTAND,{3:[49,46],4:[48,59],5:[71,46],6:[72,59]}),B:mod(FSTAND,{3:[38,34],4:[25,36],5:[82,34],6:[95,36]}),sp:2.2,m:["Shoulders"],cue:"Lead with your elbows and stop at shoulder height. Use a lighter weight than you think."},
+ // gym: barbell & bench
+ {id:"bbsquat",n:"Barbell Back Squat",cat:"lower",lv:2,eq:"bb",w:"bar",at:1,kind:"reps",A:mod(STAND,{3:[52,42],4:[57,31],5:[53,42],6:[58,31]}),B:mod(SQUAT,{3:[64,71],4:[70,59],5:[65,71],6:[71,59]}),sp:2.8,m:["Quads","Glutes","Core"],cue:"Rest the bar on your upper back, not your neck. Brace, sit down between your hips, and drive up through mid-foot."},
+ {id:"hipthrust",n:"Barbell Hip Thrust",cat:"lower",lv:1,eq:"bb",w:"bar",at:2,kind:"reps",scene:{bench:[12,88,28]},A:[[26,81],[34,86],[58,100],[44,96],[56,98],[45,96],[57,98],[74,82],[84,108],[75,82],[85,108]],B:[[25,86],[34,86],[64,86],[46,90],[62,86],[47,90],[63,86],[82,80],[84,108],[83,80],[85,108]],sp:2.4,m:["Glutes","Hamstrings"],cue:"Shoulder blades on the bench edge, bar padded over your hips. Drive up until your body is flat like a tabletop, chin tucked."},
+ {id:"bbrdl",n:"Barbell Romanian Deadlift",cat:"lower",lv:2,eq:"bb",w:"bar",kind:"reps",A:STAND,B:RDL,sp:2.8,m:["Hamstrings","Glutes","Back"],cue:"Keep the bar touching your legs the whole way. Hips back, soft knees, flat back."},
+ {id:"bbpress",n:"Bench Press",cat:"upper",lv:2,eq:"bb",w:"bar",kind:"reps",scene:{bench:[22,96,62]},A:[[19,90],[28,92],[59,92],[28,78],[28,64],[29,78],[29,64],[78,84],[84,108],[79,84],[85,108]],B:[[19,90],[28,92],[59,92],[20,100],[30,84],[21,100],[31,84],[78,84],[84,108],[79,84],[85,108]],sp:2.4,m:["Chest","Triceps","Shoulders"],cue:"Feet flat, shoulder blades pinched. Lower the bar to mid-chest and press it back up over your shoulders. Use a spotter for heavy sets."},
+ // gym: kettlebell
+ {id:"kbswing",n:"Kettlebell Swing",cat:"lower",lv:2,eq:"kb",w:"kb",kind:"reps",A:mod(RDL,{3:[78,68],4:[68,78],5:[79,68],6:[69,78]}),B:mod(STAND,{3:[74,32],4:[88,32],5:[75,31],6:[89,31]}),sp:1.4,m:["Glutes","Hamstrings","Power"],cue:"It's a hip hinge, not a squat. Snap your hips forward so the bell floats to chest height."},
+ {id:"kbsumo",n:"Kettlebell Sumo Deadlift",cat:"lower",lv:1,eq:"kb",w:"kb",kind:"reps",view:"front",A:mod(FSTAND,{7:[48,84],8:[44,108],9:[72,84],10:[76,108],3:[53,46],4:[59,60],5:[67,46],6:[61,60]}),B:[[60,46],[60,55],[60,80],[55,68],[59,82],[65,68],[61,82],[42,90],[44,108],[78,90],[76,108]],sp:2.4,m:["Glutes","Inner thighs","Quads"],cue:"Wide stance, bell between your feet. Chest proud as you stand and squeeze your glutes at the top."},
+ // gym: cable machine
+ {id:"cablekick",n:"Cable Glute Kickback",cat:"lower",lv:1,eq:"cable",uni:1,kind:"reps",scene:{tower:1,cable:[[104,102],10]},A:[[75,27],[70,35],[56,61],[84,42],[100,46],[85,43],[101,47],[57,84],[56,108],[58,84],[60,108]],B:[[75,27],[70,35],[56,61],[84,42],[100,46],[85,43],[101,47],[57,84],[56,108],[40,78],[24,90]],sp:2,m:["Glutes"],cue:"Strap on your ankle, hold the machine. Kick back and slightly up without arching your low back."},
+ {id:"cablerow",n:"Seated Cable Row",cat:"upper",lv:1,eq:"cable",kind:"reps",scene:{tower:1,bench:[26,96,30],plate:1,cable:[[104,72],6]},A:[[53,56],[50,64],[44,94],[62,66],[76,68],[63,66],[77,68],[66,84],[86,94],[67,84],[87,94]],B:[[44,54],[44,63],[44,94],[33,72],[47,74],[34,72],[48,74],[66,84],[86,94],[67,84],[87,94]],sp:2.4,m:["Back","Biceps"],cue:"Sit tall and pull the handle to your belly button. Squeeze your shoulder blades, then let your arms extend slowly."},
+ {id:"pushdown",n:"Cable Tricep Pushdown",cat:"upper",lv:1,eq:"cable",kind:"reps",scene:{tower:1,cable:[[104,26],6]},A:mod(STAND,{3:[63,45],4:[73,37],5:[64,45],6:[74,37]}),B:mod(STAND,{3:[63,45],4:[69,58],5:[64,45],6:[70,58]}),sp:2,m:["Triceps"],cue:"Elbows stay pinned at your sides. Press down until your arms are straight, then return slowly."},
+ // gym: machines
+ {id:"legpress",n:"Leg Press",cat:"lower",lv:1,eq:"machine",kind:"reps",scene:{legpress:1},A:[[24,67],[30,74],[52,98],[40,92],[52,96],[41,92],[53,96],[66,78],[86,66],[67,78],[87,66]],B:[[24,67],[30,74],[52,98],[40,92],[52,96],[41,92],[53,96],[73,87],[94,76],[74,87],[95,76]],sp:2.6,m:["Quads","Glutes"],cue:"Feet hip-width in the middle of the platform. Lower until your knees reach 90° and don't lock them at the top."},
+ {id:"pulldown",n:"Lat Pulldown",cat:"upper",lv:1,eq:"machine",kind:"reps",view:"front",scene:{seat:1,pdbar:1},A:[[60,40],[60,50],[60,80],[46,38],[42,24],[74,38],[78,24],[50,92],[50,108],[70,92],[70,108]],B:[[60,40],[60,50],[60,80],[40,62],[42,48],[80,62],[78,48],[50,92],[50,108],[70,92],[70,108]],sp:2.4,m:["Lats","Upper back","Biceps"],cue:"Lean back slightly and pull the bar to your upper chest, driving your elbows down toward your ribs."},
+ // core
+ {id:"plank",n:"Forearm Plank",cat:"core",lv:1,eq:"bw",kind:"hold",A:PL_A,B:mod(PL_A,{2:[70,98]}),sp:3,floor:1,m:["Core","Shoulders"],cue:"Elbows under shoulders. Squeeze glutes and pull your belly button toward your spine."},
+ {id:"deadbug",n:"Dead Bug",cat:"core",lv:1,eq:"bw",uni:1,kind:"reps",A:DB_A,B:mod(DB_A,{5:[20,98],6:[7,96],7:[86,98],8:[108,102]}),sp:2.6,floor:1,m:["Deep core"],cue:"Press your low back into the floor. Extend the opposite arm and leg slowly."},
+ {id:"birddog",n:"Bird Dog",cat:"core",lv:1,eq:"bw",uni:1,kind:"reps",A:QUAD,B:mod(QUAD,{5:[24,79],6:[10,78],7:[90,80],8:[112,79]}),sp:2.6,floor:1,m:["Core","Glutes","Back"],cue:"Reach long through the opposite hand and heel. Keep your hips level."},
+ {id:"bicycle",n:"Bicycle Crunch",cat:"core",lv:2,eq:"bw",uni:1,kind:"reps",A:BI_A,B:mod(BI_A,{7:[60,82],8:[80,86],9:[84,98],10:[106,96]}),sp:1.6,floor:1,m:["Obliques","Abs"],cue:"Rotate your shoulder toward the opposite knee. Move slowly and don't pull on your neck."},
+ {id:"twist",n:"Russian Twist",cat:"core",lv:2,eq:"either",w:"one",kind:"reps",A:TW_A,B:mod(TW_A,{3:[49,92],4:[44,104],5:[50,92],6:[45,104]}),sp:1.6,floor:1,m:["Obliques"],cue:"Lean back with a long spine. Rotate from your ribs, not just your arms. Each touch counts as one."},
+ // cardio
+ {id:"jacks",n:"Jumping Jacks",cat:"cardio",lv:1,eq:"bw",kind:"time",view:"front",A:FSTAND,B:mod(FSTAND,{3:[42,22],4:[48,8],5:[78,22],6:[72,8],7:[46,84],8:[38,106],9:[74,84],10:[82,106]}),sp:1,m:["Full body","Heart rate"],cue:"Land softly on the balls of your feet. Step out instead of jumping for a low-impact version."},
+ {id:"highknees",n:"High Knees",cat:"cardio",lv:1,eq:"bw",kind:"time",A:MARCH_A,B:MARCH_B,sp:0.7,m:["Hip flexors","Heart rate"],cue:"Quick feet, knees to hip height, pump your arms."},
+ {id:"squatjump",n:"Squat Jump",cat:"cardio",lv:2,eq:"bw",kind:"time",A:mod(SQUAT,{3:[64,72],4:[56,82],5:[65,72],6:[57,82]}),B:[[61,15],[60,24],[60,55],[67,13],[75,3],[69,13],[77,3],[59,78],[60,101],[61,78],[62,101]],sp:1.3,m:["Legs","Glutes","Power"],cue:"Swing your arms up as you jump. Land softly back into the squat."},
+ {id:"climbers",n:"Mountain Climbers",cat:"cardio",lv:2,eq:"bw",kind:"time",A:PU_A,B:mod(PU_A,{9:[52,98],10:[66,106]}),sp:0.8,floor:1,m:["Core","Shoulders","Heart rate"],cue:"Shoulders stay over wrists. Drive knees toward your chest, alternating fast."},
+ {id:"buttkicks",n:"Butt Kicks",cat:"cardio",lv:1,eq:"bw",kind:"time",A:mod(STAND,{9:[60,84],10:[45,71],5:[66,44],6:[74,37],3:[55,44],4:[54,58]}),B:mod(STAND,{7:[60,84],8:[45,71],3:[66,44],4:[74,37],5:[55,44],6:[54,58]}),sp:0.7,m:[],cue:"Stay on the balls of your feet and flick your heels up toward your glutes, quick and light."},
+ {id:"jumprope",n:"Jump Rope",cat:"cardio",lv:1,eq:"bw",kind:"time",view:"front",A:mod(FSTAND,{3:[44,48],4:[38,60],5:[76,48],6:[82,60]}),B:mod(FSTAND,{0:[60,15],1:[60,25],2:[60,56],3:[44,43],4:[38,55],5:[76,43],6:[82,55],7:[53,80],8:[53,103],9:[67,80],10:[67,103]}),sp:0.45,m:[],cue:"Small, quick hops with soft knees. No rope? Mime the wrist circles. Step side to side for low impact."},
+ {id:"rower",n:"Rowing Machine",cat:"cardio",lv:1,eq:"machine",kind:"time",scene:{rower:1},A:[[68,60],[64,68],[52,96],[76,74],[88,78],[77,74],[89,78],[62,72],[76,94],[63,72],[77,94]],B:[[20,57],[22,66],[30,96],[16,80],[30,80],[17,80],[31,80],[53,90],[76,94],[54,90],[77,94]],sp:2,m:[],cue:"Push with your legs first, then lean back, then pull the handle to your ribs. Reverse that order on the way back."},
+ // cool-down
+ {id:"child",n:"Child's Pose",cat:"cool",lv:1,eq:"bw",kind:"stretch",A:CP_A,B:mod(CP_A,{1:[46,95],0:[37,99]}),sp:4,floor:1,m:["Back","Hips"],cue:"Sink your hips to your heels and breathe into your back."},
+ {id:"hamstring",n:"Seated Forward Fold",cat:"cool",lv:1,eq:"bw",kind:"stretch",A:HS_A,B:HS_B,sp:6,floor:1,m:["Hamstrings","Low back"],cue:"Hinge from the hips and reach toward your shins or feet. No bouncing."},
+ {id:"fig4",n:"Figure-4 Stretch",cat:"cool",lv:1,eq:"bw",uni:1,kind:"stretch",A:F4_A,B:F4_B,sp:5,floor:1,m:["Glutes","Hips"],cue:"Cross one ankle over the other knee and pull the bottom thigh toward your chest."},
+ {id:"quad",n:"Standing Quad Stretch",cat:"cool",lv:1,eq:"bw",uni:1,kind:"stretch",A:QS_A,B:mod(QS_A,{3:[70,39],4:[83,42]}),sp:4,m:["Quads","Hip flexors"],cue:"Hold your ankle behind you, knees together, and tuck your pelvis slightly."}
+];
+const byId=Object.fromEntries(EX.map(e=>[e.id,e]));
+
+// Exact muscles: p = primary movers (or main stretch target), s = secondary / stabilizers
+const GLUTE="Gluteus maximus", GMED="Gluteus medius", QUADS="Quadriceps", HAMS="Hamstrings", ADD="Adductors (inner thigh)",
+  ERECT="Erector spinae (low back)", TVA="Transverse abdominis", RA="Rectus abdominis", OBL="Obliques", HIPF="Hip flexors (iliopsoas)",
+  CALF="Calves (gastrocnemius, soleus)", LATS="Latissimus dorsi (lats)", RHOM="Rhomboids", MTRAP="Middle trapezius", UTRAP="Upper trapezius",
+  LTRAP="Lower trapezius", ADELT="Anterior deltoid", LDELT="Lateral deltoid", RDELT="Rear deltoid", PEC="Pectoralis major", TRI="Triceps brachii",
+  BI="Biceps brachii", SERR="Serratus anterior", GRIP="Forearm flexors (grip)";
+const MUSC={
+ march:{p:[HIPF,"Rectus femoris"],s:[CALF,ADELT]},
+ circles:{p:[ADELT,LDELT,RDELT],s:["Rotator cuff",UTRAP]},
+ hinge:{p:[HAMS,GLUTE],s:[ERECT]},
+ airsquat:{p:[QUADS,GLUTE],s:[ADD,HIPF]},
+ squat:{p:[QUADS,GLUTE],s:["Adductor magnus",HAMS,CALF]},
+ goblet:{p:[QUADS,GLUTE],s:["Adductor magnus",RA,ERECT,"Upper back"]},
+ lunge:{p:[GLUTE,QUADS],s:[GMED,HAMS,ADD,CALF]},
+ bridge:{p:[GLUTE],s:[HAMS,ERECT,TVA]},
+ rdl:{p:[HAMS,GLUTE],s:[ERECT,"Adductor magnus",GRIP]},
+ slrdl:{p:[GLUTE,HAMS],s:[GMED,ERECT,"Ankle stabilizers"]},
+ sumo:{p:[ADD,GLUTE,QUADS],s:[HAMS]},
+ donkey:{p:[GLUTE],s:[HAMS,TVA]},
+ kneepush:{p:[PEC,TRI],s:[ADELT,SERR,RA]},
+ pushup:{p:[PEC,TRI],s:[ADELT,SERR,RA,TVA]},
+ taps:{p:[TVA,OBL],s:[ADELT,LDELT,SERR,TRI]},
+ superman:{p:[ERECT,GLUTE],s:[RHOM,LTRAP,RDELT,HAMS]},
+ row:{p:[LATS,RHOM,MTRAP],s:[RDELT,BI,"Brachialis"]},
+ press:{p:[ADELT,LDELT],s:[TRI,UTRAP,SERR]},
+ curl:{p:[BI],s:["Brachialis","Brachioradialis"]},
+ lateral:{p:[LDELT],s:["Supraspinatus",UTRAP]},
+ bbsquat:{p:[QUADS,GLUTE],s:["Adductor magnus",HAMS,ERECT,RA]},
+ hipthrust:{p:[GLUTE],s:[HAMS,GMED,QUADS]},
+ bbrdl:{p:[HAMS,GLUTE],s:[ERECT,LATS,MTRAP,GRIP]},
+ bbpress:{p:[PEC],s:[ADELT,TRI]},
+ kbswing:{p:[GLUTE,HAMS],s:[ERECT,QUADS,TVA,ADELT]},
+ kbsumo:{p:[GLUTE,ADD,QUADS],s:[HAMS,ERECT,UTRAP]},
+ cablekick:{p:[GLUTE],s:[HAMS,GMED]},
+ cablerow:{p:[LATS,RHOM,MTRAP],s:[BI,RDELT,ERECT]},
+ pushdown:{p:[TRI],s:["Anconeus",GRIP]},
+ legpress:{p:[QUADS,GLUTE],s:[ADD,HAMS,CALF]},
+ pulldown:{p:[LATS],s:["Teres major",RHOM,LTRAP,BI]},
+ plank:{p:[TVA,RA],s:[OBL,ADELT,GLUTE,QUADS]},
+ deadbug:{p:[TVA,RA],s:[OBL,HIPF]},
+ birddog:{p:[ERECT,TVA],s:[GLUTE,GMED,"Multifidus",ADELT]},
+ bicycle:{p:["Internal & external obliques",RA],s:[HIPF]},
+ twist:{p:["Internal & external obliques"],s:[RA,TVA,HIPF]},
+ jacks:{p:[CALF,GMED,LDELT],s:[ADD,QUADS]},
+ highknees:{p:[HIPF,QUADS],s:[CALF,RA]},
+ squatjump:{p:[QUADS,GLUTE,CALF],s:[HAMS,TVA]},
+ climbers:{p:[RA,HIPF],s:[ADELT,OBL,QUADS]},
+ buttkicks:{p:[HAMS,CALF],s:[QUADS,GLUTE,HIPF]},
+ jumprope:{p:[CALF],s:[QUADS,"Tibialis anterior",LDELT]},
+ rower:{p:[QUADS,LATS,GLUTE],s:[HAMS,RHOM,BI,ERECT]},
+ child:{p:[ERECT,LATS],s:[GLUTE,"Deep hip rotators"]},
+ hamstring:{p:[HAMS],s:[ERECT,CALF]},
+ fig4:{p:["Piriformis",GLUTE],s:["Deep hip rotators",GMED]},
+ quad:{p:["Rectus femoris",QUADS],s:[HIPF]}
+};
+EX.forEach(e=>{ if(!MUSC[e.id]) console.warn("No muscle map for",e.id); });
+
+// ---------- State ----------
+const S={level:2,goal:"tone",time:30,focus:new Set(),gear:new Set(["db"])};
+const GEAR=["db","kb","bb","cable","machine"];
+const GEAR_NAME={db:"Dumbbells",kb:"Kettlebell",bb:"Barbell",cable:"Cable machine",machine:"Machine"};
+const hasDb=()=>S.gear.has("db");
+// What a move is actually done with under the current settings
+function kitOf(e){ if(e.eq==="bw") return null; if(e.eq==="either") return hasDb()?"db":null; return e.eq; }
+let plan={warm:[],main:[],cool:[]};
+const done=new Set();
+
+const BALANCED=["lower","upper","core","lower","upper","core","lower","upper","core","lower"];
+const FOCUS_NAME={lower:"Glutes & legs",upper:"Arms & back",core:"Core",cardio:"Cardio"};
+// Build the category slots for the main block.
+// No emphasis: even lower/upper/core split. With emphasis: one each of lower/upper/core first so it stays full-body,
+// then emphasized areas fill two of every three remaining slots and the rest rotate through everything else.
+function buildSlots(n){
+  const emph=[...S.focus];
+  if(!emph.length){
+    let s=BALANCED.slice(0,n);
+    if(S.goal==="burn") s=s.map((c,i)=>i%3===2?"cardio":c);
+    return s;
+  }
+  const base=["lower","upper","core"];
+  // Fat burn keeps some cardio even when cardio isn't an emphasis
+  const others=(S.goal==="burn" && !S.focus.has("cardio"))?["cardio"]:[];
+  const missing=base.filter(c=>!S.focus.has(c));
+  // Short workouts: emphasized areas first, then whatever else fits. Longer: one move for each non-emphasized area keeps it full-body.
+  const slots=n<4?[...emph,...missing].slice(0,n):missing.slice();
+  let i=0,j=0,k=0;
+  while(slots.length<n){
+    if(i%3===2 && others.length) slots.push(others[k++%others.length]);
+    else slots.push(emph[j++%emph.length]);
+    i++;
+  }
+  // Spread out repeats so the same area isn't worked back to back
+  const out=[]; const rest=slots.slice();
+  while(rest.length){
+    const prev=out[out.length-1];
+    const cnt={}; rest.forEach(c=>cnt[c]=(cnt[c]||0)+1);
+    const next=Object.keys(cnt).filter(c=>c!==prev).sort((a,b)=>cnt[b]-cnt[a])[0] ?? rest[0];
+    out.push(rest.splice(rest.indexOf(next),1)[0]);
+  }
+  return out;
+}
+const COUNT={strength:{20:3,30:4,45:6},tone:{20:4,30:6,45:9},burn:{20:5,30:7,45:10}};
+
+function eligible(e){
+  if(e.lv>S.level) return false;
+  if(e.eq!=="bw" && e.eq!=="either" && !S.gear.has(e.eq)) return false;
+  return true;
+}
+function weightOf(e){
+  let w=1;
+  if(e.eq!=="bw" && e.eq!=="either" && S.gear.has(e.eq)) w+=e.eq==="db"?1.5:2;
+  if(e.eq==="either" && hasDb()) w+=1;
+  if(S.level===3 && e.lv>=2) w+=1;
+  if(S.level===1 && e.lv===1) w+=0.5;
+  return w;
+}
+function pick(cat,used){
+  let pool=EX.filter(e=>e.cat===cat && eligible(e) && !used.has(e.id));
+  if(!pool.length) pool=EX.filter(e=>["lower","upper","core"].includes(e.cat) && eligible(e) && !used.has(e.id));
+  if(!pool.length) return null;
+  const tot=pool.reduce((s,e)=>s+weightOf(e),0); let r=Math.random()*tot;
+  for(const e of pool){ r-=weightOf(e); if(r<=0) return e; }
+  return pool[pool.length-1];
+}
+function generate(){
+  const used=new Set(); done.clear();
+  const n=COUNT[S.goal][S.time];
+  const slots=buildSlots(n);
+  plan.main=slots.map(c=>{const e=pick(c,used); if(e) used.add(e.id); return e;}).filter(Boolean);
+  const warmPool=["march","circles",Math.random()<.5?"hinge":"airsquat"];
+  if(S.goal==="burn") warmPool[0]="jacks";
+  plan.warm=warmPool.map(id=>byId[id]);
+  const cools=EX.filter(e=>e.cat==="cool").sort(()=>Math.random()-.5).slice(0,3);
+  plan.cool=cools;
+  render();
+}
+
+// ---------- Prescription ----------
+function rx(e,block){
+  const L=S.level-1, side=e.uni?" / side":"";
+  if(block==="warm") return {big:"40 sec",sub:e.uni?"switch halfway":"easy pace"};
+  if(block==="cool") return {big:e.uni?"30 sec":"45 sec",sub:e.uni?"each side · breathe slowly":"breathe slowly"};
+  if(S.goal==="burn"){
+    const work=[30,40,45][L], rest=[30,20,15][L];
+    if(e.kind==="hold") return {big:work+" sec",sub:"hold · rest "+rest+" sec"};
+    return {big:work+" sec",sub:(e.uni?"alternate sides · ":"as many good reps as you can · ")+"rest "+rest+" sec"};
+  }
+  if(S.goal==="strength"){
+    const sets=[3,4,4][L];
+    if(e.kind==="hold") return {big:sets+" × "+[20,30,45][L]+"s",sub:"hold · rest 60 sec"};
+    if(e.kind==="time") return {big:sets+" × "+[20,30,40][L]+"s",sub:"rest 60 sec"};
+    const loaded=!!kitOf(e);
+    const reps=loaded?"8–10":(L===2?"15–20":"12–15");
+    return {big:sets+" × "+reps,sub:(e.uni?"each side · ":"")+"rest 75 sec · 3 sec down"};
+  }
+  const sets=[2,3,3][L];
+  if(e.kind==="hold") return {big:sets+" × "+[20,30,45][L]+"s",sub:"hold · rest 45 sec"};
+  if(e.kind==="time") return {big:sets+" × "+[25,35,45][L]+"s",sub:"rest 45 sec"};
+  return {big:sets+" × "+(L===0?"12":"12–15"),sub:(e.uni?"each side · ":"")+"rest 45 sec"};
+}
+function estimate(){
+  const n=plan.main.length, L=S.level-1; let sec=6*40+30;
+  if(S.goal==="burn"){ const rounds=[2,3,3][L]; sec+=rounds*n*60+(rounds-1)*60; }
+  else if(S.goal==="strength"){ const sets=[3,4,4][L]; sec+=n*sets*(45+75); }
+  else { const sets=[2,3,3][L]; sec+=n*sets*(45+45); }
+  return Math.round(sec/60);
+}
+function mainMeta(){
+  const L=S.level-1;
+  if(S.goal==="burn"){ const r=[2,3,3][L]; return `Circuit · ${r} rounds · move straight through, rest 60 sec between rounds`; }
+  if(S.goal==="strength") return "Straight sets · finish every set of one move before the next";
+  return "Straight sets · or pair moves back to back as supersets";
+}
+
+// ---------- Figure drawing ----------
+const NS="http://www.w3.org/2000/svg";
+const figs=[];
+function mk(tag,attrs,parent){const el=document.createElementNS(NS,tag);for(const k in attrs)el.setAttribute(k,attrs[k]);parent&&parent.appendChild(el);return el;}
+function buildScene(svg,e,g){
+  const s=e.scene||{}; g.upd=[];
+  const eqC="var(--fig-far)";
+  if(s.tower){ mk("rect",{x:104,y:18,width:9,height:93,rx:2,fill:"var(--surface)",stroke:"var(--line)","stroke-width":1.5},svg);
+    mk("rect",{x:106,y:24,width:5,height:30,rx:1,fill:"var(--line)"},svg); }
+  if(s.bench){ const [x,y,w]=s.bench;
+    mk("rect",{x:x+3,y:y+4,width:3,height:111-y-4,fill:eqC},svg); mk("rect",{x:x+w-6,y:y+4,width:3,height:111-y-4,fill:eqC},svg);
+    mk("rect",{x,y,width:w,height:5,rx:2,fill:eqC},svg); }
+  if(s.plate) mk("rect",{x:89,y:82,width:4,height:26,rx:1.5,fill:eqC},svg);
+  if(s.legpress){
+    mk("line",{x1:76,y1:104,x2:116,y2:83,stroke:"var(--line)","stroke-width":3,"stroke-linecap":"round"},svg);
+    mk("line",{x1:19,y1:62,x2:47,y2:104,stroke:eqC,"stroke-width":6,"stroke-linecap":"round"},svg);
+    mk("rect",{x:40,y:102,width:30,height:5,rx:2,fill:eqC},svg); mk("rect",{x:50,y:106,width:6,height:5,fill:eqC},svg);
+    const plat=mk("line",{stroke:eqC,"stroke-width":4,"stroke-linecap":"round"},svg);
+    g.upd.push(P=>{const k=P[9],f=P[10];let dx=f[0]-k[0],dy=f[1]-k[1];const l=Math.hypot(dx,dy);dx/=l;dy/=l;
+      const c=[f[0]+dx*3,f[1]+dy*3];plat.setAttribute("x1",c[0]-dy*11);plat.setAttribute("y1",c[1]+dx*11);plat.setAttribute("x2",c[0]+dy*11);plat.setAttribute("y2",c[1]-dx*11);});
+  }
+  if(s.rower){
+    mk("rect",{x:12,y:100,width:94,height:4,rx:2,fill:eqC},svg);
+    mk("rect",{x:14,y:104,width:4,height:7,fill:eqC},svg);
+    mk("circle",{cx:98,cy:92,r:11,fill:"var(--surface)",stroke:eqC,"stroke-width":3},svg);
+    mk("rect",{x:78,y:84,width:4,height:16,rx:1.5,fill:eqC},svg);
+    const seat=mk("rect",{width:16,height:4,rx:2,fill:"var(--muted)"},svg);
+    const ln=mk("line",{x1:92,y1:84,stroke:"var(--muted)","stroke-width":1.3},svg);
+    g.upd.push(P=>{seat.setAttribute("x",P[2][0]-8);seat.setAttribute("y",P[2][1]+1);ln.setAttribute("x2",P[6][0]);ln.setAttribute("y2",P[6][1]);});
+  }
+  if(s.seat){ mk("rect",{x:57,y:86,width:6,height:25,fill:eqC},svg); mk("rect",{x:42,y:81,width:36,height:6,rx:2,fill:eqC},svg); }
+  if(s.cable){ const [from,idx]=s.cable;
+    mk("circle",{cx:from[0],cy:from[1],r:2.6,fill:"var(--muted)"},svg);
+    const ln=mk("line",{x1:from[0],y1:from[1],stroke:"var(--muted)","stroke-width":1.3},svg);
+    g.upd.push(P=>{ln.setAttribute("x2",P[idx][0]);ln.setAttribute("y2",P[idx][1]);}); }
+  if(e.w==="bar"){ const at=e.at??6;
+    const pl=mk("circle",{r:9,fill:"var(--accent-soft)",stroke:"var(--accent)","stroke-width":2.2},svg);
+    const hub=mk("circle",{r:2,fill:"var(--accent)"},svg);
+    g.upd.push(P=>{const p=P[at];pl.setAttribute("cx",p[0]);pl.setAttribute("cy",p[1]);hub.setAttribute("cx",p[0]);hub.setAttribute("cy",p[1]);}); }
+}
+function buildFront(svg,e,g){
+  const s=e.scene||{};
+  if(s.pdbar){
+    const cab=mk("line",{stroke:"var(--muted)","stroke-width":1.3},svg);
+    const bar=mk("line",{stroke:"var(--accent)","stroke-width":3,"stroke-linecap":"round"},svg);
+    g.upd.push(P=>{const a=P[4],b=P[6],my=(a[1]+b[1])/2;
+      bar.setAttribute("x1",a[0]-8);bar.setAttribute("y1",a[1]);bar.setAttribute("x2",b[0]+8);bar.setAttribute("y2",b[1]);
+      cab.setAttribute("x1",60);cab.setAttribute("y1",-4);cab.setAttribute("x2",60);cab.setAttribute("y2",my);}); }
+  if(e.w==="kb"){
+    const k=mk("g",{},svg);
+    mk("path",{d:"M-4 3 Q-4.5 -3 0 -3 Q4.5 -3 4 3",fill:"none",stroke:"var(--accent)","stroke-width":2.2},k);
+    mk("circle",{cx:0,cy:8,r:6,fill:"var(--accent)"},k);
+    g.upd.push(P=>k.setAttribute("transform",`translate(${P[6][0].toFixed(1)} ${(P[6][1]).toFixed(1)})`)); }
+}
+function makeFigure(svg,e){
+  const g={};
+  mk("line",{x1:6,y1:111,x2:114,y2:111,stroke:"var(--line)","stroke-width":1.5},svg);
+  if(e.floor) mk("rect",{x:14,y:109.5,width:96,height:3,rx:1.5,fill:"var(--accent-soft)"},svg);
+  buildScene(svg,e,g);
+  const limb=(c,w)=>mk("polyline",{fill:"none",stroke:c,"stroke-width":w,"stroke-linecap":"round","stroke-linejoin":"round"},svg);
+  g.farArm=limb("var(--fig-far)",5.5); g.farLeg=limb("var(--fig-far)",6.5);
+  g.dbF=mk("g",{},svg);
+  const front=e.view==="front";
+  g.torso=mk("path",front?{fill:"var(--fig)",stroke:"var(--fig)","stroke-width":5,"stroke-linejoin":"round"}:{fill:"none",stroke:"var(--fig)","stroke-width":10,"stroke-linecap":"round"},svg);
+  g.hair=mk(front?"circle":"path",front?{r:3.6,fill:"var(--fig)"}:{fill:"none",stroke:"var(--fig)","stroke-width":4,"stroke-linecap":"round"},svg);
+  g.head=mk("circle",{r:6.8,fill:"var(--fig)"},svg);
+  g.nearLeg=limb("var(--fig)",6.5); g.nearArm=limb("var(--fig)",5.5);
+  g.dbN=mk("g",{},svg);
+  const dumb=(par)=>({bar:mk("line",{stroke:"var(--accent)","stroke-width":2.4,"stroke-linecap":"round"},par),p1:mk("line",{stroke:"var(--accent)","stroke-width":5,"stroke-linecap":"round"},par),p2:mk("line",{stroke:"var(--accent)","stroke-width":5,"stroke-linecap":"round"},par)});
+  const showW=(e.w==="one"||e.w==="two") && kitOf(e)==="db";
+  if(showW){ g.wN=dumb(g.dbN); if(e.w==="two") g.wF=dumb(g.dbF); }
+  buildFront(svg,e,g);
+  return g;
+}
+const pt=p=>p[0].toFixed(1)+","+p[1].toFixed(1);
+function placeDumb(d,el,hand){
+  let dx=hand[0]-el[0],dy=hand[1]-el[1];const len=Math.hypot(dx,dy)||1;dx/=len;dy/=len;
+  const px=-dy,py=dx, a=[hand[0]-px*6,hand[1]-py*6], b=[hand[0]+px*6,hand[1]+py*6];
+  d.bar.setAttribute("x1",a[0]);d.bar.setAttribute("y1",a[1]);d.bar.setAttribute("x2",b[0]);d.bar.setAttribute("y2",b[1]);
+  [[d.p1,a],[d.p2,b]].forEach(([l,c])=>{l.setAttribute("x1",c[0]-dx*2.6);l.setAttribute("y1",c[1]-dy*2.6);l.setAttribute("x2",c[0]+dx*2.6);l.setAttribute("y2",c[1]+dy*2.6);});
+}
+function drawPose(f,P){
+  const [hd,nk,hp,eF,hF,eN,hN,kF,fF,kN,fN]=P, g=f.g, front=f.e.view==="front";
+  const sF=front?[nk[0]-9,nk[1]+2]:nk, sN=front?[nk[0]+9,nk[1]+2]:nk;
+  const pF=front?[hp[0]-6,hp[1]]:hp, pN=front?[hp[0]+6,hp[1]]:hp;
+  g.farArm.setAttribute("points",[sF,eF,hF].map(pt).join(" "));
+  g.nearArm.setAttribute("points",[sN,eN,hN].map(pt).join(" "));
+  g.farLeg.setAttribute("points",[pF,kF,fF].map(pt).join(" "));
+  g.nearLeg.setAttribute("points",[pN,kN,fN].map(pt).join(" "));
+  g.torso.setAttribute("d",front?`M${pt(sF)}L${pt(sN)}L${pt([pN[0]+1,pN[1]])}L${pt([pF[0]-1,pF[1]])}Z`:`M${pt(nk)}L${pt(hp)}`);
+  g.head.setAttribute("cx",hd[0]);g.head.setAttribute("cy",hd[1]);
+  let ux=hd[0]-nk[0],uy=hd[1]-nk[1];const ul=Math.hypot(ux,uy)||1;ux/=ul;uy/=ul;
+  if(front){g.hair.setAttribute("cx",hd[0]+ux*7);g.hair.setAttribute("cy",hd[1]+uy*7);}
+  else{const bx=uy,by=-ux;
+    const s=[hd[0]+bx*5+ux*2,hd[1]+by*5+uy*2],c=[hd[0]+bx*12+ux*1,hd[1]+by*12+uy*1],t=[hd[0]+bx*12-ux*8,hd[1]+by*12-uy*8];
+    g.hair.setAttribute("d",`M${pt(s)}Q${pt(c)} ${pt(t)}`);}
+  if(g.wN) placeDumb(g.wN,eN,hN);
+  if(g.wF) placeDumb(g.wF,eF,hF);
+  g.upd.forEach(fn=>fn(P));
+}
+const lerp=(A,B,t)=>A.map((p,i)=>[p[0]+(B[i][0]-p[0])*t,p[1]+(B[i][1]-p[1])*t]);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)");
+const io=new IntersectionObserver(es=>es.forEach(en=>{const f=figs.find(x=>x.svg===en.target);if(f)f.vis=en.isIntersecting;}));
+function loop(ts){
+  if(!reduce.matches){
+    for(const f of figs){ if(!f.vis) continue;
+      const ph=((ts/1000)/f.e.sp+f.off)%1; const t=(1-Math.cos(ph*2*Math.PI))/2;
+      drawPose(f,lerp(f.e.A,f.e.B,t)); }
+  }
+  requestAnimationFrame(loop);
+}
+
+// ---------- Rendering ----------
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const TAGS={lower:"Lower body",upper:"Upper body",core:"Core",cardio:"Cardio",warm:"Warm-up",cool:"Stretch"};
+function card(e,i,block){
+  const r=rx(e,block), key=block+":"+e.id;
+  const el=document.createElement("article"); el.className="card"+(done.has(key)?" done":"");
+  el.innerHTML=`<div class="art"><svg viewBox="0 -2 120 118" role="img" aria-label="Demonstration of ${esc(e.n)}"></svg>
+    <span class="num">${String(i+1).padStart(2,"0")}</span><span class="tag">${TAGS[e.cat]}</span></div>
+    <div class="body"><h3>${esc(e.n)}</h3>
+    <div class="rx"><strong>${r.big}</strong><span>${r.sub}</span></div>
+    ${kitOf(e)?`<div class="muscles"><span class="kit">${GEAR_NAME[kitOf(e)]}</span></div>`:""}
+    <dl class="musc">
+      <dt>${block==="cool"?"Stretches":"Primary"}</dt><dd class="pri">${MUSC[e.id].p.map(x=>`<span>${x}</span>`).join("")}</dd>
+      <dt>${block==="cool"?"Also":"Secondary"}</dt><dd>${MUSC[e.id].s.map(x=>`<span>${x}</span>`).join("")}</dd>
+    </dl>
+    <p class="cue"><b>Form:</b> ${esc(e.cue)}</p>
+    <div class="card-actions">${block==="main"?`<button class="swap-btn">Swap move</button>`:""}<button class="done-btn" aria-pressed="${done.has(key)}">${done.has(key)?"Done ✓":"Mark done"}</button></div></div>`;
+  const svg=el.querySelector("svg"); const g=makeFigure(svg,e);
+  const f={svg,g,e,off:Math.random(),vis:true}; figs.push(f); io.observe(svg);
+  drawPose(f,reduce.matches?e.B:e.A);
+  el.querySelector(".done-btn").onclick=()=>{done.has(key)?done.delete(key):done.add(key);render();};
+  const sw=el.querySelector(".swap-btn");
+  if(sw) sw.onclick=()=>{const used=new Set(plan.main.map(x=>x.id));const n=pick(e.cat,used);if(n){plan.main[i]=n;done.delete(key);render();}else toast("No other moves fit these settings");};
+  return el;
+}
+function block(id,title,meta,list,key){
+  const s=document.getElementById(id); s.innerHTML=`<div class="block-head"><h2>${title}</h2><span class="meta">${meta}</span></div><div class="grid"></div>`;
+  const grid=s.querySelector(".grid"); list.forEach((e,i)=>grid.appendChild(card(e,i,key)));
+}
+function render(){
+  figs.forEach(f=>io.unobserve(f.svg)); figs.length=0;
+  block("warm","Warm-up","3 moves · about 2 min",plan.warm,"warm");
+  block("main","Main workout",mainMeta(),plan.main,"main");
+  const cnt={}; plan.main.forEach(e=>MUSC[e.id].p.forEach(m=>cnt[m]=(cnt[m]||0)+1));
+  const cov=document.createElement("div"); cov.className="coverage";
+  cov.innerHTML="<b>Primary muscles this session</b>"+Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([m,n])=>`<span>${m}<i>×${n}</i></span>`).join("");
+  document.querySelector("#main .block-head").appendChild(cov);
+  block("cool","Cool-down","3 stretches · about 2–3 min",plan.cool,"cool");
+  const goalName={strength:"Strength",tone:"Tone & sculpt",burn:"Fat burn"}[S.goal];
+  const focusTxt=S.focus.size?[...S.focus].map(f=>FOCUS_NAME[f]).join(" + "):"Balanced";
+  document.getElementById("summary").textContent=`${plan.main.length} main moves · ≈${estimate()} min · ${goalName} · ${focusTxt}`;
+  document.querySelectorAll(".seg[data-key]").forEach(seg=>seg.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(String(S[seg.dataset.key])===b.dataset.v))));
+  document.querySelectorAll("#focus button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.f==="balanced"?S.focus.size===0:S.focus.has(b.dataset.f))));
+  document.querySelectorAll("#gear button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.g==="all"?GEAR.every(x=>S.gear.has(x)):S.gear.has(b.dataset.g))));
+}
+document.getElementById("gear").addEventListener("click",ev=>{
+  const b=ev.target.closest("button"); if(!b) return; const k=b.dataset.g;
+  if(k==="all"){ const full=GEAR.every(x=>S.gear.has(x)); S.gear=new Set(full?[]:GEAR); }
+  else S.gear.has(k)?S.gear.delete(k):S.gear.add(k);
+  generate();
+  toast(S.gear.size?"Equipment: "+[...S.gear].map(x=>GEAR_NAME[x]).join(", "):"Bodyweight only");
+});
+document.getElementById("focus").addEventListener("click",ev=>{
+  const b=ev.target.closest("button"); if(!b) return; const k=b.dataset.f;
+  if(k==="balanced") S.focus.clear();
+  else { S.focus.has(k)?S.focus.delete(k):S.focus.add(k); if(S.focus.size===4) S.focus.clear(); }
+  generate();
+});
+document.querySelectorAll(".seg[data-key]").forEach(seg=>seg.addEventListener("click",ev=>{
+  const b=ev.target.closest("button"); if(!b) return; const k=seg.dataset.key;
+  S[k]=(k==="level"||k==="time")?Number(b.dataset.v):b.dataset.v; generate();
+}));
+document.getElementById("gen").onclick=generate;
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,1800);}
+function planText(){
+  const line=(e,b)=>{const r=rx(e,b);return `- ${e.n}: ${r.big} (${r.sub})\n    Primary: ${MUSC[e.id].p.join(", ")} | Secondary: ${MUSC[e.id].s.join(", ")}`;};
+  return [`FULL-BODY WORKOUT · ${document.getElementById("summary").textContent}`,"","WARM-UP",...plan.warm.map(e=>line(e,"warm")),"","MAIN · "+mainMeta(),...plan.main.map(e=>line(e,"main")),"","COOL-DOWN",...plan.cool.map(e=>line(e,"cool"))].join("\n");
+}
+document.getElementById("copy").onclick=()=>{
+  const txt=planText();
+  navigator.clipboard.writeText(txt).then(()=>toast("Plan copied")).catch(()=>{
+    const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");toast("Plan copied");}catch(_){toast("Select and copy the plan manually");} ta.remove();});
+};
+generate();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
